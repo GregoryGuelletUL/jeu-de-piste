@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bravo ! – Bibliothèque du 27 Septembre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:   #1a1209;
+    --paper: #faf6ef;
+    --cream: #f0e9d8;
+    --c-bd:        #c0392b;
+    --c-roman:     #1a3a5c;
+    --c-jeunesse:  #1e5c3a;
+    --c-one:       #8b5e00;
+    --c-spectacle: #6b2d8b;
+    --accent: var(--c-roman);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Grain texture */
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+
+  /* ── ÉCRAN CHARGEMENT ── */
+  #screen-loading {
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; min-height:100vh; gap:16px;
+    position:relative; z-index:1;
+  }
+  .spinner {
+    width:48px; height:48px;
+    border:4px solid var(--cream);
+    border-top-color: var(--ink);
+    border-radius:50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #screen-loading p { font-size:14px; color:#888; }
+
+  /* ── ÉCRAN ERREUR ── */
+  #screen-error {
+    display:none; flex-direction:column; align-items:center;
+    justify-content:center; min-height:100vh; gap:16px; padding:30px;
+    text-align:center; position:relative; z-index:1;
+  }
+  #screen-error .err-icon { font-size:56px; }
+  #screen-error h2 { font-family:'Playfair Display',serif; font-size:24px; }
+  #screen-error p { font-size:14px; color:#666; line-height:1.6; }
+
+  /* ── ÉCRAN PRINCIPAL ── */
+  #screen-main {
+    display:none; flex-direction:column; align-items:center;
+    width:100%; max-width:480px; position:relative; z-index:1;
+    padding-bottom:40px;
+  }
+
+  /* BANDEAU HAUT coloré selon catégorie */
+  .top-band {
+    width:100%; padding:18px 24px 70px;
+    position:relative; overflow:hidden;
+  }
+  .top-band .biblio-name {
+    font-size:10px; letter-spacing:2.5px; text-transform:uppercase;
+    color:rgba(255,255,255,0.7); margin-bottom:4px;
+  }
+  .top-band .cat-label {
+    font-size:12px; letter-spacing:1.5px; text-transform:uppercase;
+    color:rgba(255,255,255,0.9); font-weight:600;
+  }
+  /* motif décoratif */
+  .top-band::after {
+    content:''; position:absolute; right:-30px; top:-30px;
+    width:180px; height:180px; border-radius:50%;
+    background:rgba(255,255,255,0.07);
+  }
+  .top-band::before {
+    content:''; position:absolute; right:40px; bottom:-50px;
+    width:120px; height:120px; border-radius:50%;
+    background:rgba(255,255,255,0.05);
+  }
+
+  /* CARTE LIVRE flottante sur le bandeau */
+  .book-card {
+    background:white;
+    border-radius:20px;
+    margin: -50px 20px 0;
+    padding:24px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.13);
+    display:flex;
+    gap:18px;
+    align-items:flex-start;
+    position:relative;
+  }
+  .cover-wrap {
+    flex-shrink:0;
+    width:90px; height:125px;
+    border-radius:8px;
+    overflow:hidden;
+    background: var(--cream);
+    box-shadow:3px 4px 14px rgba(0,0,0,0.18);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cover-wrap img {
+    width:100%; height:100%; object-fit:cover;
+  }
+  .cover-placeholder {
+    font-size:32px; text-align:center;
+  }
+  .book-info { flex:1; min-width:0; }
+  .book-titre {
+    font-family:'Playfair Display',serif;
+    font-size:17px; font-weight:700; line-height:1.25;
+    margin-bottom:5px;
+    overflow:hidden;
+    max-height: calc(1.25em * 3);
+  }
+  .book-auteur {
+    font-size:12px; color:#888; margin-bottom:12px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .cote-pill {
+    display:inline-block;
+    padding:5px 12px;
+    border-radius:20px;
+    font-size:13px; font-weight:700;
+    letter-spacing:0.5px;
+    color:white;
+  }
+
+  /* BLOC BRAVO */
+  .bravo-block {
+    margin:20px;
+    padding:22px;
+    background:var(--ink);
+    border-radius:16px;
+    text-align:center;
+    color:white;
+  }
+  .bravo-block .confetti { font-size:40px; margin-bottom:8px; }
+  .bravo-block h2 {
+    font-family:'Playfair Display',serif;
+    font-size:26px; margin-bottom:8px;
+  }
+  .bravo-block p {
+    font-size:14px; line-height:1.6; opacity:0.85;
+  }
+
+  /* BLOC COTE expliquée */
+  .cote-block {
+    margin:0 20px 16px;
+    border:1.5px solid var(--cream);
+    border-radius:14px;
+    overflow:hidden;
+    background:white;
+  }
+  .cote-block-header {
+    padding:12px 16px 10px;
+    font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    color:#aaa; border-bottom:1px solid var(--cream);
+  }
+  .cote-lines { padding:14px 16px; }
+  .cote-line {
+    display:flex; gap:12px; align-items:baseline;
+    padding:6px 0; border-bottom:1px solid #f5f0e8;
+    font-size:14px; line-height:1.4;
+  }
+  .cote-line:last-child { border-bottom:none; }
+  .cote-part {
+    font-family:'Playfair Display',serif;
+    font-size:16px; font-weight:700;
+    flex-shrink:0; min-width:60px;
+  }
+  .cote-desc { color:#555; font-size:13px; }
+
+  /* BLOC ANECDOTE */
+  .anecdote-block {
+    margin:0 20px 20px;
+    padding:14px 16px;
+    background:#fff8ee;
+    border-left:3px solid #c8a000;
+    border-radius:0 10px 10px 0;
+    font-size:13.5px; line-height:1.6; color:#5a4a20;
+  }
+  .anecdote-block strong {
+    display:block; font-size:10px; letter-spacing:2px;
+    text-transform:uppercase; color:#c8a000; margin-bottom:5px;
+  }
+
+  /* BOUTON RETOUR */
+  .btn-retour {
+    margin:0 20px;
+    display:block; width:calc(100% - 40px);
+    padding:14px; border-radius:10px;
+    background:var(--ink); color:white; border:none;
+    font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600;
+    cursor:pointer; text-align:center; text-decoration:none;
+  }
+
+  /* Confetti animation */
+  @keyframes fall {
+    0%   { transform:translateY(-20px) rotate(0deg);   opacity:1; }
+    100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
+  }
+  .confetti-piece {
+    position:fixed; top:0; width:10px; height:10px;
+    border-radius:2px; pointer-events:none; z-index:999;
+    animation: fall linear forwards;
+  }
+</style>
+</head>
+<body>
+
+<!-- CHARGEMENT -->
+<div id="screen-loading">
+  <div class="spinner"></div>
+  <p>Recherche du livre…</p>
+</div>
+
+<!-- ERREUR -->
+<div id="screen-error">
+  <div class="err-icon">🔍</div>
+  <h2>Livre introuvable</h2>
+  <p>Ce code ne correspond à aucun livre de l'activité.<br>Demande de l'aide à un bibliothécaire !</p>
+</div>
+
+<!-- PRINCIPAL -->
+<div id="screen-main">
+
+  <div class="top-band" id="top-band">
+    <div class="biblio-name">Bibliothèque du 27 Septembre</div>
+    <div class="cat-label" id="cat-label">—</div>
+  </div>
+
+  <div class="book-card">
+    <div class="cover-wrap" id="cover-wrap">
+      <div class="cover-placeholder" id="cover-placeholder">📖</div>
+    </div>
+    <div class="book-info">
+      <div class="book-titre" id="book-titre">—</div>
+      <div class="book-auteur" id="book-auteur">—</div>
+      <span class="cote-pill" id="cote-pill">—</span>
+    </div>
+  </div>
+
+  <div class="bravo-block">
+    <div class="confetti">🎉</div>
+    <h2>Bien trouvé !</h2>
+    <p id="bravo-msg">Tu as trouvé ce livre dans les rayons.<br>Regarde maintenant sa cote et comprends comment elle est construite.</p>
+  </div>
+
+  <div class="cote-block">
+    <div class="cote-block-header">Comment lire la cote ?</div>
+    <div class="cote-lines" id="cote-lines"></div>
+  </div>
+
+  <div class="anecdote-block">
+    <strong>💡 À savoir</strong>
+    <span id="anecdote-text">—</span>
+  </div>
+
+  <a class="btn-retour" id="btn-retour" href="#">← Revenir à l'activité</a>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// BASE DE DONNÉES — même données que le jeu de piste
+// ══════════════════════════════════════════════════════════
+const LIVRES = {
+  "B27S-BD-001": {
+    titre: "Jim d'Etterbeek",
+    auteur: "Collectif",
+    cote: "BD-JIMD",
+    cat: "BD",
+    coteParts: [
+      { part:"BD",   desc:"Bande Dessinée — toutes les BD sont au rez-de-chaussée" },
+      { part:"JIMD", desc:"Les 4 premières lettres du titre : Jim D…" }
+    ],
+    anecdote: "Dans notre bibliothèque, les BD sont classées par les 4 premières lettres du TITRE. Pas par le nom de l'auteur comme ailleurs !",
+    emoji: "🎨"
+  },
+  "B27S-BD-002": {
+    titre: "Rebetiko",
+    auteur: "Collectif",
+    cote: "BD-REBE",
+    cat: "BD",
+    coteParts: [
+      { part:"BD",   desc:"Bande Dessinée" },
+      { part:"REBE", desc:"Les 4 premières lettres du titre : Rebe…" }
+    ],
+    anecdote: "REBE = les 4 premières lettres de Rebetiko. Toujours les 4 premières lettres du titre !",
+    emoji: "🎨"
+  },
+  "B27S-BD-003": {
+    titre: "L'île de la désunion — Benoît Brisefer t.9",
+    auteur: "Peyo",
+    cote: "BD-BENO/9",
+    cat: "BD",
+    coteParts: [
+      { part:"BD",   desc:"Bande Dessinée" },
+      { part:"BENO", desc:"Les 4 premières lettres du titre : Beno…" },
+      { part:"/9",   desc:"C'est le 9e tome de la série Benoît Brisefer" }
+    ],
+    anecdote: "Le /9 indique le numéro du tome. Tous les Benoît Brisefer sont rangés ensemble, dans l'ordre !",
+    emoji: "🎨"
+  },
+  "B27S-BD-004": {
+    titre: "L'affaire Tournesol — Tintin t.18",
+    auteur: "Hergé",
+    cote: "BD-TINT/18",
+    cat: "BD",
+    coteParts: [
+      { part:"BD",   desc:"Bande Dessinée" },
+      { part:"TINT", desc:"Les 4 premières lettres du titre : Tint…" },
+      { part:"/18",  desc:"C'est le 18e album de Tintin" }
+    ],
+    anecdote: "Tous les Tintin sont à TINT, rangés par numéro de tome. Tu peux ainsi trouver toute la série d'un coup !",
+    emoji: "🎨"
+  },
+  "B27S-ROM-001": {
+    titre: "Entre les marges",
+    auteur: "Elena Ferrante",
+    cote: "F18227A",
+    cat: "Roman",
+    coteParts: [
+      { part:"F",     desc:"Fiction — c'est un roman" },
+      { part:"18227", desc:"Le numéro unique donné à ce livre dans notre système" },
+      { part:"A",     desc:"Une lettre pour distinguer les exemplaires ou éditions" }
+    ],
+    anecdote: "Les romans ont chacun un numéro unique. Des feuillets à l'entrée du rayon t'aident à te repérer dans les chiffres !",
+    emoji: "📖"
+  },
+  "B27S-ROM-002": {
+    titre: "Le chemin de l'être au-delà des religions",
+    auteur: "Marc Luyckx",
+    cote: "F74964B",
+    cat: "Roman",
+    coteParts: [
+      { part:"F",     desc:"Fiction — c'est un roman" },
+      { part:"74964", desc:"Le numéro unique de ce livre" },
+      { part:"B",     desc:"Lettre pour différencier deux livres qui auraient le même numéro" }
+    ],
+    anecdote: "Le B à la fin sert à différencier deux livres qui auraient le même numéro. Un détail qui évite la confusion !",
+    emoji: "📖"
+  },
+  "B27S-ROM-003": {
+    titre: "Le père porcher",
+    auteur: "Terry Pratchett",
+    cote: "F10543A/908,20",
+    cat: "Roman",
+    coteParts: [
+      { part:"F",       desc:"Fiction — c'est un roman" },
+      { part:"10543A",  desc:"Le numéro unique du livre + lettre complémentaire" },
+      { part:"/908,20", desc:"Sous-classification du thème — permet de regrouper les livres similaires" }
+    ],
+    anecdote: "La partie après le / donne plus de détails sur le thème. Ça regroupe les livres qui se ressemblent dans les rayons.",
+    emoji: "📖"
+  },
+  "B27S-ROM-004": {
+    titre: "Découvrir la philosophie",
+    auteur: "Alain Renaut",
+    cote: "F14187A/1",
+    cat: "Roman",
+    coteParts: [
+      { part:"F",      desc:"Fiction — c'est un roman" },
+      { part:"14187A", desc:"Le numéro unique du livre + lettre complémentaire" },
+      { part:"/1",     desc:"Tome 1 de l'ouvrage — comme pour les BD !" }
+    ],
+    anecdote: "Le /1 signifie tome 1. Comme dans les BD, le chiffre après le / indique le volume de la série.",
+    emoji: "📖"
+  },
+  "B27S-JEU-001": {
+    titre: "Ma maman est bizarre",
+    auteur: "Camille Victorine & Anna Wanda Gogusey",
+    cote: "ALB263A",
+    cat: "Jeunesse",
+    coteParts: [
+      { part:"ALB", desc:"Album — livre illustré pour les enfants" },
+      { part:"263", desc:"Le numéro donné à ce livre" },
+      { part:"A",   desc:"Lettre complémentaire" }
+    ],
+    anecdote: "ALB veut dire Album illustré. Ces livres pour enfants ont leur propre espace à l'étage, avec leur propre système de cotes !",
+    emoji: "🌟"
+  },
+  "B27S-ONE-001": {
+    titre: "Aider son enfant autiste",
+    auteur: "Delphine de Hemptinne, Nathalie Fallourd, Emmanuel Madieu",
+    cote: "20069C",
+    cat: "ONE",
+    coteParts: [
+      { part:"20069", desc:"Numéro de thème du système ONE (Office de la Naissance et de l'Enfance)" },
+      { part:"C",     desc:"Première lettre du sujet principal du livre" }
+    ],
+    anecdote: "Le rayon ONE a son propre système de numéros thématiques. Tous les livres sur un même sujet sont regroupés ensemble, quelle que soit leur forme.",
+    emoji: "👶"
+  },
+  "B27S-SPC-001": {
+    titre: "Le théâtre slovaque en français",
+    auteur: "Divadelny Ustav",
+    cote: "Z1 THE T",
+    cat: "Arts de la Scène",
+    coteParts: [
+      { part:"Z1",  desc:"Code de sous-catégorie des Arts de la Scène" },
+      { part:"THE", desc:"Premières lettres du titre : Théâtre" },
+      { part:"T",   desc:"Lettre complémentaire de classement" }
+    ],
+    anecdote: "Ce livre n'a pas un seul auteur. On utilise alors les lettres du TITRE pour construire la cote. Une exception à la règle habituelle !",
+    emoji: "🎪"
+  },
+  "B27S-SPC-002": {
+    titre: "Le sens du désordre",
+    auteur: "Sony Labou Tansi",
+    cote: "X1 LAB B",
+    cat: "Arts de la Scène",
+    coteParts: [
+      { part:"X1",  desc:"Code de sous-catégorie des Arts de la Scène" },
+      { part:"LAB", desc:"Premières lettres du nom d'auteur : Labou" },
+      { part:"B",   desc:"Lettre complémentaire de classement" }
+    ],
+    anecdote: "Dans ce rayon, la cote commence par une lettre et un chiffre. C'est différent de tous les autres rayons de la bibliothèque !",
+    emoji: "🎪"
+  }
+};
+
+const CAT_COLORS = {
+  "BD":        "#c0392b",
+  "Roman":     "#1a3a5c",
+  "Jeunesse":  "#1e5c3a",
+  "ONE":       "#8b5e00",
+  "Arts de la Scène": "#6b2d8b"
+};
+
+// ── RÉCUPÈRE L'ID DEPUIS L'URL ──────────────────────────
+function getIdFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('id') || params.get('livre') || params.get('code');
+}
+
+// ── CHERCHE COUVERTURE VIA GOOGLE BOOKS API ─────────────
+async function fetchCover(titre, auteur) {
+  try {
+    const q = encodeURIComponent(`${titre} ${auteur}`);
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&langRestrict=fr`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const item = data.items?.[0];
+    if (item?.volumeInfo?.imageLinks?.thumbnail) {
+      return item.volumeInfo.imageLinks.thumbnail.replace('http:', 'https:').replace('zoom=1','zoom=2');
+    }
+    // Essai sans restriction de langue
+    const url2 = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`;
+    const resp2 = await fetch(url2);
+    const data2 = await resp2.json();
+    const item2 = data2.items?.[0];
+    if (item2?.volumeInfo?.imageLinks?.thumbnail) {
+      return item2.volumeInfo.imageLinks.thumbnail.replace('http:', 'https:').replace('zoom=1','zoom=2');
+    }
+  } catch(e) {}
+  return null;
+}
+
+// ── LANCE DES CONFETTIS ──────────────────────────────────
+function launchConfetti() {
+  const colors = ['#c0392b','#1a3a5c','#1e5c3a','#8b5e00','#6b2d8b','#f1c40f'];
+  for (let i = 0; i < 40; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.width = (8 + Math.random() * 8) + 'px';
+    el.style.height = (8 + Math.random() * 8) + 'px';
+    el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    el.style.animationDelay = (Math.random() * 0.8) + 's';
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+}
+
+// ── AFFICHE LA PAGE PRINCIPALE ───────────────────────────
+async function showLivre(id) {
+  const livre = LIVRES[id];
+  if (!livre) {
+    document.getElementById('screen-loading').style.display = 'none';
+    document.getElementById('screen-error').style.display = 'flex';
+    return;
+  }
+
+  const color = CAT_COLORS[livre.cat] || '#1a1209';
+
+  // Bandeau couleur
+  document.getElementById('top-band').style.background = color;
+  document.getElementById('cat-label').textContent = livre.cat.toUpperCase();
+
+  // Infos livre
+  document.getElementById('book-titre').textContent = livre.titre;
+  document.getElementById('book-auteur').textContent = livre.auteur;
+  const pill = document.getElementById('cote-pill');
+  pill.textContent = livre.cote;
+  pill.style.background = color;
+
+  // Cote décomposée
+  const lines = document.getElementById('cote-lines');
+  lines.innerHTML = livre.coteParts.map(p => `
+    <div class="cote-line">
+      <span class="cote-part" style="color:${color}">${p.part}</span>
+      <span class="cote-desc">${p.desc}</span>
+    </div>
+  `).join('');
+
+  // Anecdote
+  document.getElementById('anecdote-text').textContent = livre.anecdote;
+
+  // Bouton retour (si referrer ou jeu-de-piste.html connu)
+  const retour = document.getElementById('btn-retour');
+  retour.style.background = color;
+  if (document.referrer) {
+    retour.href = document.referrer;
+  } else {
+    retour.href = 'jeu-de-piste-bibliotheque.html';
+  }
+
+  // Couverture
+  const coverPlaceholder = document.getElementById('cover-placeholder');
+  coverPlaceholder.textContent = livre.emoji;
+  const imgUrl = await fetchCover(livre.titre, livre.auteur);
+  if (imgUrl) {
+    const img = document.createElement('img');
+    img.src = imgUrl;
+    img.alt = livre.titre;
+    img.onload = () => {
+      coverPlaceholder.style.display = 'none';
+      document.getElementById('cover-wrap').appendChild(img);
+    };
+  }
+
+  // Afficher
+  document.getElementById('screen-loading').style.display = 'none';
+  const main = document.getElementById('screen-main');
+  main.style.display = 'flex';
+
+  // Confettis !
+  setTimeout(launchConfetti, 300);
+}
+
+// ── INIT ─────────────────────────────────────────────────
+const id = getIdFromURL();
+if (id) {
+  showLivre(id);
+} else {
+  document.getElementById('screen-loading').style.display = 'none';
+  document.getElementById('screen-error').style.display = 'flex';
+  document.getElementById('screen-error').querySelector('p').textContent =
+    'Aucun livre spécifié dans ce lien. Scanne le bon QR code sur l\'étagère.';
+}
+</script>
+</body>
+</html>

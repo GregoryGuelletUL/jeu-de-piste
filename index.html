@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Jeu de piste – Bibliothèque 27 Septembre</title>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --ink: #1a1209;
+    --paper: #faf6ef;
+    --cream: #f0e9d8;
+    --stamp-red: #c0392b;
+    --stamp-blue: #1a3a5c;
+    --stamp-green: #1e5c3a;
+    --stamp-gold: #b8860b;
+    --accent: #c0392b;
+    --step-bd: #c0392b;
+    --step-roman: #1a3a5c;
+    --step-jeunesse: #1e5c3a;
+    --step-spectacle: #6b2d8b;
+    --step-one: #8b5e00;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── TEXTURE PAPIER ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 18px 20px 14px;
+    text-align: center;
+    position: relative;
+    z-index: 10;
+  }
+  header .eyebrow {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.55;
+    margin-bottom: 4px;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+  header .sub {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    opacity: 0.5;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    background: var(--cream);
+    padding: 12px 20px 8px;
+    border-bottom: 1px solid #ddd3c0;
+    position: sticky;
+    top: 0;
+    z-index: 9;
+  }
+  .progress-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 6px;
+  }
+  .progress-dots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #aaa;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .dot.active { border-color: var(--accent); color: var(--accent); }
+  .dot.done { background: var(--ink); border-color: var(--ink); color: white; }
+  .dot-line { flex: 1; height: 2px; background: #ddd; border-radius: 2px; }
+  .dot-line.done { background: var(--ink); }
+
+  /* ── MAIN CONTENT ── */
+  main {
+    position: relative;
+    z-index: 1;
+    padding: 0 0 100px;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── INTRO ── */
+  #screen-intro {
+    padding: 30px 20px;
+    text-align: center;
+  }
+  .book-icon {
+    font-size: 64px;
+    display: block;
+    margin: 0 auto 20px;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  #screen-intro h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    margin-bottom: 12px;
+    line-height: 1.2;
+  }
+  #screen-intro p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 24px;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .rules-card {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 0 auto 28px;
+    max-width: 360px;
+    text-align: left;
+  }
+  .rules-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.7;
+  }
+  .rules-card ol {
+    padding-left: 18px;
+    font-size: 14px;
+    line-height: 1.8;
+    opacity: 0.9;
+  }
+  .btn-start {
+    background: var(--stamp-red);
+    color: white;
+    border: none;
+    padding: 16px 40px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-start:active { transform: scale(0.97); }
+
+  /* ── MISSION CARD ── */
+  .mission-card {
+    margin: 20px;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  }
+  .mission-header {
+    padding: 16px 20px 14px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .mission-header .step-icon { font-size: 28px; }
+  .mission-header .step-info { flex: 1; }
+  .mission-header .step-num {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.75;
+  }
+  .mission-header .step-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .mission-header .floor-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .step-bd .mission-header { background: var(--step-bd); }
+  .step-roman .mission-header { background: var(--step-roman); }
+  .step-jeunesse .mission-header { background: var(--step-jeunesse); }
+  .step-spectacle .mission-header { background: var(--step-spectacle); }
+  .step-one .mission-header { background: var(--step-one); }
+
+  .mission-body {
+    background: white;
+    padding: 20px;
+  }
+  .mission-book-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .mission-book-author {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 16px;
+  }
+
+  /* ── ÉTAPES CATALOGUE ── */
+  .catalogue-steps {
+    border: 1.5px solid #e8e0d0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .cat-step {
+    padding: 12px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    border-bottom: 1px solid #f0e8d8;
+  }
+  .cat-step:last-child { border-bottom: none; }
+  .cat-num {
+    width: 22px; height: 22px;
+    background: var(--ink);
+    color: white;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .cat-text { flex: 1; font-size: 13.5px; line-height: 1.5; }
+  .cat-text strong { display: block; font-size: 13px; color: #333; }
+  .cat-text .hint { font-size: 12px; color: #888; font-style: italic; }
+  .cat-link {
+    display: block;
+    background: #f5f0e8;
+    border: 1px solid #ddd3c0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--stamp-blue);
+    text-decoration: none;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .cat-link::before { content: '🔗 '; }
+
+  /* ── COTE BOX ── */
+  .cote-box {
+    background: var(--cream);
+    border: 1.5px dashed #c8b89a;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .cote-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 8px;
+  }
+  .cote-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .cote-explain {
+    font-size: 12px;
+    color: #777;
+    line-height: 1.5;
+  }
+
+  /* ── LOCALISATION ── */
+  .localisation {
+    background: white;
+    border: 1.5px solid #e0d8c8;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .loc-icon { font-size: 28px; flex-shrink: 0; }
+  .loc-text { font-size: 13px; line-height: 1.5; }
+  .loc-text strong { display: block; font-size: 14px; margin-bottom: 2px; }
+
+  /* ── BOUTON SCANNER ── */
+  .btn-scan {
+    width: 100%;
+    padding: 15px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: transform 0.15s;
+    color: white;
+  }
+  .btn-scan:active { transform: scale(0.97); }
+  .step-bd .btn-scan { background: var(--step-bd); }
+  .step-roman .btn-scan { background: var(--step-roman); }
+  .step-jeunesse .btn-scan { background: var(--step-jeunesse); }
+  .step-spectacle .btn-scan { background: var(--step-spectacle); }
+  .step-one .btn-scan { background: var(--step-one); }
+
+  /* ── SCANNER MODAL ── */
+  #scanner-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #scanner-modal.open { display: flex; }
+  #scanner-modal h3 {
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  #scanner-modal p {
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .scanner-frame {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  #qr-video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .scanner-overlay {
+    position: absolute;
+    inset: 0;
+    border: 3px solid rgba(255,255,255,0.8);
+    border-radius: 14px;
+    pointer-events: none;
+  }
+  .scanner-line {
+    position: absolute;
+    left: 10%; right: 10%;
+    height: 2px;
+    background: rgba(192,57,43,0.8);
+    animation: scan 2s linear infinite;
+  }
+  @keyframes scan {
+    0% { top: 10%; }
+    100% { top: 90%; }
+  }
+  #scanner-canvas { display: none; }
+  .btn-cancel {
+    color: rgba(255,255,255,0.7);
+    background: none;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 10px 28px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* ── SUCCESS ── */
+  .success-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 110;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 30px;
+  }
+  .success-overlay.open { display: flex; }
+  .success-card {
+    background: white;
+    border-radius: 20px;
+    padding: 32px 28px;
+    text-align: center;
+    max-width: 320px;
+    width: 100%;
+    animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes pop {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .success-icon { font-size: 56px; margin-bottom: 12px; }
+  .success-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .success-card p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  .btn-next {
+    background: var(--ink);
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  /* ── FIN ── */
+  #screen-fin {
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .trophy { font-size: 80px; animation: float 3s ease-in-out infinite; }
+  #screen-fin h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px;
+    margin: 20px 0 12px;
+  }
+  #screen-fin p {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .stamp-congrats {
+    display: inline-block;
+    border: 3px solid var(--stamp-red);
+    color: var(--stamp-red);
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    transform: rotate(-3deg);
+    margin: 10px 0 28px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .btn-restart {
+    background: var(--ink);
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  /* ── ANECDOTE SYSTÈME DE COTE ── */
+  .cote-info-box {
+    background: #fff8ee;
+    border-left: 3px solid var(--stamp-gold);
+    padding: 12px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 16px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #5a4a2a;
+  }
+  .cote-info-box strong { display: block; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #b8860b; margin-bottom: 4px; }
+
+  .erreur-scan {
+    color: var(--stamp-red);
+    font-size: 13px;
+    text-align: center;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Bibliothèque du 27 Septembre · FWB</div>
+  <h1>Le Détective<br>des Rayons</h1>
+  <div class="sub">Jeu de piste · Catalogue en ligne</div>
+</header>
+
+<div class="progress-wrap" id="progress-wrap" style="display:none">
+  <div class="progress-label">Progression</div>
+  <div class="progress-dots" id="progress-dots"></div>
+</div>
+
+<main>
+  <!-- ══ ÉCRAN INTRO ══ -->
+  <div id="screen-intro" class="screen active">
+    <span class="book-icon">📚</span>
+    <h2>Bienvenue<br>à la bibliothèque !</h2>
+    <p>Tu vas chercher <strong>4 livres</strong> dans les rayons.<br>On t'explique tout, étape par étape.<br>Tu n'es pas seul·e — demande de l'aide si tu veux !</p>
+    <div class="rules-card">
+      <h3>Comment ça marche ?</h3>
+      <ol>
+        <li>Tu reçois le nom d'un livre</li>
+        <li>Tu le cherches sur l'ordinateur ou le téléphone</li>
+        <li>Tu vas le trouver dans les rayons</li>
+        <li>Tu scannes le petit code sur l'étagère</li>
+        <li>Et tu passes au livre suivant !</li>
+      </ol>
+    </div>
+    <p style="font-size:13px;color:#888;margin-bottom:20px;max-width:300px;margin-left:auto;margin-right:auto;">Tu peux faire cette activité seul·e ou avec quelqu'un. Prends ton temps !</p>
+    <button class="btn-start" onclick="startGame()">Commencer !</button>
+  </div>
+
+  <!-- ══ ÉCRANS ÉTAPES (générés en JS) ══ -->
+  <div id="steps-container"></div>
+
+  <!-- ══ ÉCRAN FIN ══ -->
+  <div id="screen-fin" class="screen">
+    <div class="trophy">🌟</div>
+    <h2>Tu as tout trouvé !</h2>
+    <div class="stamp-congrats">Bravo !</div>
+    <p>Tu as cherché et trouvé les 4 livres tout seul·e.<br>Tu sais maintenant comment notre bibliothèque est organisée.</p>
+    <p style="font-size:14px;color:#555;margin-bottom:8px;">La prochaine fois, tu pourras trouver un livre par toi-même 😊</p>
+    <p style="font-size:13px;color:#999;margin-bottom:28px;">Les bibliothécaires sont là si tu as des questions. N'hésite pas à leur parler !</p>
+    <button class="btn-restart" onclick="restartGame()">🔄 Recommencer avec d'autres livres</button>
+  </div>
+</main>
+
+<!-- ══ MODAL SCANNER QR ══ -->
+<div id="scanner-modal">
+  <h3>Scanne le petit code</h3>
+  <p>Pointe la caméra vers le code<br>qui est collé sur l'étagère</p>
+  <div class="scanner-frame">
+    <video id="qr-video" autoplay playsinline muted></video>
+    <div class="scanner-overlay">
+      <div class="scanner-line"></div>
+    </div>
+  </div>
+  <canvas id="scanner-canvas"></canvas>
+  <div id="scan-error" class="erreur-scan"></div>
+  <button class="btn-cancel" onclick="stopScanner()">Annuler</button>
+</div>
+
+<!-- ══ MODAL SUCCÈS ══ -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-card">
+    <div class="success-icon" id="success-icon">✅</div>
+    <h3 id="success-title">Trouvé !</h3>
+    <p id="success-msg"></p>
+    <button class="btn-next" id="success-btn" onclick="nextStep()">Étape suivante →</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// BASE DE DONNÉES DES LIVRES
+// Chaque livre a un qrCode = identifiant unique
+// → à imprimer et coller sur l'étagère en face du livre
+// ══════════════════════════════════════════════
+const LIVRES = {
+  bd: [
+    { titre: "Jim d'Etterbeek", auteur: "Collectif",
+      cote: "BD-JIMD",
+      explication: "BD = Bande Dessinée.\nJIMD = les 4 premières lettres du titre : Jim D...",
+      localisation: "Rez-de-chaussée · Rayon BD",
+      guideCatalogue: "Tape le titre : Jim d'Etterbeek",
+      anecdote: "Dans notre biblio, les BD sont rangées par les 4 premières lettres du TITRE. Pas par le nom de l'auteur comme ailleurs !",
+      qrCode: "B27S-BD-001", emoji: "🎨" },
+    { titre: "Rebetiko", auteur: "Collectif",
+      cote: "BD-REBE",
+      explication: "BD = Bande Dessinée.\nREBE = les 4 premières lettres du titre : Rebe...",
+      localisation: "Rez-de-chaussée · Rayon BD",
+      guideCatalogue: "Tape le titre : Rebetiko",
+      anecdote: "REBE, c'est les 4 premières lettres de Rebetiko. Simple : on prend toujours les 4 premières lettres du titre !",
+      qrCode: "B27S-BD-002", emoji: "🎨" },
+    { titre: "L'île de la désunion (Benoît Brisefer)", auteur: "Peyo",
+      cote: "BD-BENO/9",
+      explication: "BD = Bande Dessinée.\nBENO = les 4 premières lettres du titre : Beno...\n/9 = c'est le 9e tome de la série.",
+      localisation: "Rez-de-chaussée · Rayon BD",
+      guideCatalogue: "Tape le titre : Brisefer ou île désunion",
+      anecdote: "Le /9 après la cote indique que c'est le 9e tome. Pratique pour trouver le bon volume dans une série !",
+      qrCode: "B27S-BD-003", emoji: "🎨" },
+    { titre: "L'affaire Tournesol (Tintin)", auteur: "Hergé",
+      cote: "BD-TINT/18",
+      explication: "BD = Bande Dessinée.\nTINT = les 4 premières lettres du titre : Tint...\n/18 = c'est le 18e album de Tintin.",
+      localisation: "Rez-de-chaussée · Rayon BD",
+      guideCatalogue: "Tape le titre : Affaire Tournesol",
+      anecdote: "Tintin est rangé à TINT. Le /18 dit que c'est le 18e album. On trouve tous les Tintin au même endroit !",
+      qrCode: "B27S-BD-004", emoji: "🎨" }
+  ],
+  roman: [
+    { titre: "Entre les marges", auteur: "Elena Ferrante",
+      cote: "F 18227 A",
+      explication: "F = Fond.\n18227 = numéro donné au livre pour définir son ordre d'arrivée.\nA = lettre pour définir le format.",
+      localisation: "Rez-de-chaussée · Rayon Romans · Consulte le feuillet à l'entrée du rayon",
+      guideCatalogue: "Tape le titre : Entre les marges",
+      anecdote: "Les romans ont un numéro unique. Des feuillets à l'entrée du rayon t'aident à te repérer dans les chiffres !",
+      qrCode: "B27S-ROM-001", emoji: "📖" },
+    { titre: "Le chemin de l'être au-delà des religions", auteur: "Marc Luyckx",
+      cote: "F 74964 B",
+      explication: "F = Fond).\n74964 = numéro donné au livre pour définir son ordre d'arrivée.\nB = lettre pour définir le format.",
+      localisation: "Rez-de-chaussée · Rayon Romans · Consulte le feuillet à l'entrée du rayon",
+      guideCatalogue: "Tape le titre : chemin de l'être",
+      anecdote: "Le B à la fin sert à différencier deux livres qui auraient le même numéro. Un détail qui évite la confusion !",
+      qrCode: "B27S-ROM-002", emoji: "📖" },
+    { titre: "Le père porcher", auteur: "Terry Pratchett",
+      cote: "F 10543 A/908,20",
+      explication: "F = Fond.\n10543 = numéro donné au livre pour définir son ordre d'arrivée.\n/908,20 = une sous-classification de la série.",
+      localisation: "Rez-de-chaussée · Rayon Romans · Consulte le feuillet à l'entrée du rayon",
+      guideCatalogue: "Tape le titre : père porcher",
+      anecdote: "La partie après le / donne plus de détails sur l'emplacement du livre. Ça aide à regrouper les livres qui se ressemblent.",
+      qrCode: "B27S-ROM-003", emoji: "📖" },
+    { titre: "Découvrir la philosophie", auteur: "Alain Renaut",
+      cote: "F 14187 A/1",
+      explication: "F = Fond.\n14187 = numéro donné au livre pour définir son ordre d'arrivée.\n/1 = tome 1 de l'ouvrage.",
+      localisation: "Rez-de-chaussée · Rayon Romans · Consulte le feuillet à l'entrée du rayon",
+      guideCatalogue: "Tape le titre : Découvrir la philosophie",
+      anecdote: "Le /1 veut dire que c'est le tome 1. Comme pour les BD, le chiffre après le / indique le volume !",
+      qrCode: "B27S-ROM-004", emoji: "📖" }
+  ],
+  jeunesse: [
+    { titre: "Ma maman est bizarre", auteur: "Camille Victorine & Anna Wanda Gogusey",
+      cote: "ALB 263 A",
+      explication: "ALB = Album (livre illustré pour enfants).\n263 = numéro donné au livre pour définir son ordre d'arrivée.\nA = lettre pour définir le format.",
+      localisation: "Étage · Espace Jeunesse + ONE",
+      guideCatalogue: "Tape le titre : Ma maman est bizarre",
+      anecdote: "ALB veut dire Album. Ce sont les livres illustrés pour les enfants. Ils ont leur propre code ici à l'étage !",
+      qrCode: "B27S-JEU-001", emoji: "🌟" },
+    { titre: "Aider son enfant autiste", auteur: "Delphine de Hemptinne, Nathalie Fallourd, Emmanuel Madieu",
+      cote: "20069 C",
+      explication: "20069 = numéro donné au livre pour définir son ordre d'arrivée.\nC = lettre pour définir le format.",
+      localisation: "Étage · Espace Jeunesse + ONE",
+      guideCatalogue: "Tape le titre : Aider son enfant autiste",
+      anecdote: "Ce livre est dans l'espace ONE. Pas de lettre au début, mais un numéro de thème. Un classement spécial pour les livres sur l'enfance !",
+      qrCode: "B27S-ONE-001", emoji: "🌟" }
+  ],
+  spectacle: [
+    { titre: "Le théâtre slovaque en français", auteur: "Divadelny Ustav",
+      cote: "Z1 THE T",
+      explication: "Z1 = code spécifique des Arts de la Scène.\nTHE = premières lettres du titre (Théâtre).\nT = première lettre de l'auteur.",
+      localisation: "Étage · Bibliothèque des Arts de la Scène",
+      guideCatalogue: "Tape le titre : théâtre slovaque",
+      anecdote: "Ce livre n'a pas un seul auteur. On utilise alors les lettres du titre pour faire la cote.",
+      qrCode: "B27S-SPC-001", emoji: "🎪" },
+    { titre: "Le sens du désordre", auteur: "Sony Labou Tansi",
+      cote: "X1 LAB B",
+      explication: "X1 = code spéfifique des Arts de la Scène.\nLAB = premières lettres du nom de l'écrivain : Labou.\nB = première lettre du nom du directeur de publication : Blachère.",
+      localisation: "Étage · Bibliothèque des Arts de la Scène",
+      guideCatalogue: "Tape le nom : Sony Labou Tansi",
+      anecdote: "Dans ce rayon, la cote commence par une lettre et un chiffre. C'est différent de tous les autres rayons !",
+      qrCode: "B27S-SPC-002", emoji: "🎪" }
+  ],
+  one: []
+};
+
+const CATEGORIES = [
+  { key: 'bd',        label: 'Bande Dessinée',              floor: 'Rez-de-chaussée', className: 'step-bd',        icon: '🎨' },
+  { key: 'roman',     label: 'Roman',                       floor: 'Rez-de-chaussée', className: 'step-roman',     icon: '📖' },
+  { key: 'jeunesse',  label: 'Jeunesse + ONE',              floor: 'Étage',           className: 'step-jeunesse',  icon: '🌟' },
+  { key: 'spectacle', label: 'Arts de la Scène',           floor: 'Étage',           className: 'step-spectacle', icon: '🎪' },
+];
+
+// ══ ÉTAT ══
+let mission = [];
+let currentStep = 0;
+let videoStream = null;
+let scanInterval = null;
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function startGame() {
+  // Tirer 1 livre aléatoire par catégorie
+  mission = CATEGORIES.map((cat, i) => ({
+    ...cat,
+    livre: pick(LIVRES[cat.key]),
+    stepIndex: i
+  }));
+  currentStep = 0;
+  renderSteps();
+  document.getElementById('progress-wrap').style.display = 'block';
+  renderProgress();
+  showScreen('step-0');
+}
+
+function renderProgress() {
+  const dots = document.getElementById('progress-dots');
+  dots.innerHTML = '';
+  mission.forEach((m, i) => {
+    if (i > 0) {
+      const line = document.createElement('div');
+      line.className = 'dot-line' + (i <= currentStep ? ' done' : '');
+      dots.appendChild(line);
+    }
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i < currentStep ? ' done' : i === currentStep ? ' active' : '');
+    dot.textContent = i < currentStep ? '✓' : (i + 1);
+    dots.appendChild(dot);
+  });
+}
+
+function renderSteps() {
+  const container = document.getElementById('steps-container');
+  container.innerHTML = '';
+  mission.forEach((m, i) => {
+    const div = document.createElement('div');
+    div.id = `step-${i}`;
+    div.className = `screen ${m.className}`;
+    if (i === 0) div.classList.add('active');
+    div.innerHTML = `
+      <div class="mission-card">
+        <div class="mission-header">
+          <span class="step-icon">${m.icon}</span>
+          <div class="step-info">
+            <div class="step-num">Livre ${i+1} sur 4</div>
+            <div class="step-title">${m.label}</div>
+          </div>
+          <span class="floor-badge">📍 ${m.floor}</span>
+        </div>
+        <div class="mission-body">
+          <div class="mission-book-title">${m.livre.titre}</div>
+          <div class="mission-book-author">${m.livre.auteur}</div>
+
+          <div class="catalogue-steps">
+            <div class="cat-step">
+              <div class="cat-num">1</div>
+              <div class="cat-text">
+                <strong>Ouvre le catalogue</strong>
+                <span class="hint">Appuie sur le bouton bleu ci-dessous</span>
+              </div>
+            </div>
+            <div class="cat-step">
+              <div class="cat-num">2</div>
+              <div class="cat-text">
+                <strong>${m.livre.guideCatalogue}</strong>
+                <span class="hint">dans la barre de recherche, puis appuie sur Entrée</span>
+              </div>
+            </div>
+            <div class="cat-step">
+              <div class="cat-num">3</div>
+              <div class="cat-text">
+                <strong>Cherche la <em>cote</em> du livre</strong>
+                <span class="hint">C'est le code écrit à côté du titre dans les résultats</span>
+              </div>
+            </div>
+            <div class="cat-step">
+              <div class="cat-num">4</div>
+              <div class="cat-text">
+                <strong>Compare avec la cote ici ↓</strong>
+                <span class="hint">Si c'est pareil, tu es sur le bon livre !</span>
+              </div>
+            </div>
+          </div>
+
+          <a class="cat-link" href="https://www.webopac.cfwb.be/bibli2709/Search/Search/simple%20search" target="_blank">
+            📖 Ouvrir le catalogue →
+          </a>
+
+          <div class="cote-box">
+            <div class="cote-label">La cote du livre</div>
+            <div class="cote-value">${m.livre.cote}</div>
+            <div class="cote-explain">${m.livre.explication.replace(/\n/g, '<br>')}</div>
+          </div>
+
+          <div class="cote-info-box">
+            <strong>💡 À savoir</strong>
+            ${m.livre.anecdote}
+          </div>
+
+          <div class="localisation">
+            <div class="loc-icon">📍</div>
+            <div class="loc-text">
+              <strong>${m.floor}</strong>
+              ${m.livre.localisation}
+            </div>
+          </div>
+
+          <button class="btn-scan" onclick="openScanner(${i})">
+            📷 Scanner le code sur l'étagère
+          </button>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// ══ NAVIGATION ══
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+function nextStep() {
+  document.getElementById('success-overlay').classList.remove('open');
+  currentStep++;
+  if (currentStep >= mission.length) {
+    document.getElementById('progress-wrap').style.display = 'none';
+    showScreen('screen-fin');
+  } else {
+    showScreen(`step-${currentStep}`);
+    renderProgress();
+    window.scrollTo(0, 0);
+  }
+}
+
+function restartGame() {
+  showScreen('screen-intro');
+  document.getElementById('progress-wrap').style.display = 'none';
+  document.getElementById('steps-container').innerHTML = '';
+}
+
+// ══ SCANNER QR CODE ══
+function openScanner(stepIndex) {
+  document.getElementById('scan-error').textContent = '';
+  document.getElementById('scanner-modal').classList.add('open');
+  startCamera(stepIndex);
+}
+
+function stopScanner() {
+  if (videoStream) {
+    videoStream.getTracks().forEach(t => t.stop());
+    videoStream = null;
+  }
+  if (scanInterval) {
+    clearInterval(scanInterval);
+    scanInterval = null;
+  }
+  document.getElementById('scanner-modal').classList.remove('open');
+}
+
+function extractId(data) {
+  const s = data.trim();
+  try {
+    const url = new URL(s);
+    const id = url.searchParams.get('id');
+    if (id) return id.trim();
+  } catch(e) {}
+  return s;
+}
+
+function handleQRCode(data, stepIndex) {
+  const expected = mission[stepIndex].livre.qrCode;
+  const scanned = extractId(data);
+  if (scanned === expected) {
+    stopScanner();
+    showSuccess(stepIndex);
+  } else {
+    document.getElementById('scan-error').textContent =
+      '❌ Lu : ' + scanned + ' | Attendu : ' + expected;
+  }
+}
+
+async function startCamera(stepIndex) {
+  const video = document.getElementById('qr-video');
+  const errEl = document.getElementById('scan-error');
+
+  // Tente BarcodeDetector natif (Android Chrome, Safari 17+)
+  if ('BarcodeDetector' in window) {
+    try {
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      videoStream = stream;
+      video.srcObject = stream;
+      await video.play();
+      scanInterval = setInterval(async () => {
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length > 0) {
+            handleQRCode(codes[0].rawValue, stepIndex);
+          }
+        } catch(e) {}
+      }, 300);
+      return;
+    } catch(e) {
+      console.warn('BarcodeDetector échoué, fallback jsQR', e);
+    }
+  }
+
+  // Fallback : jsQR via canvas
+  const canvas = document.getElementById('scanner-canvas');
+  try {
+    // Charge jsQR dynamiquement si pas encore chargé
+    if (typeof jsQR === 'undefined') {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    });
+    videoStream = stream;
+    video.srcObject = stream;
+    await video.play();
+    scanInterval = setInterval(() => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) handleQRCode(code.data, stepIndex);
+      }
+    }, 250);
+  } catch(err) {
+    errEl.textContent = "Impossible d'ouvrir la caméra. Vérifie les autorisations.";
+    console.error(err);
+  }
+}
+
+function showSuccess(stepIndex) {
+  const m = mission[stepIndex];
+  const isLast = stepIndex === mission.length - 1;
+  document.getElementById('success-icon').textContent = isLast ? '🌟' : m.icon;
+  document.getElementById('success-title').textContent = isLast ? 'Tu as tout trouvé !' : `Bien trouvé !`;
+  document.getElementById('success-msg').textContent = isLast
+    ? `Tu as cherché et trouvé les 4 livres. Tu sais maintenant comment la bibliothèque est organisée !`
+    : `Tu as trouvé « ${m.livre.titre} ». Sa cote est ${m.livre.cote}. Continue !`;
+  document.getElementById('success-btn').textContent = isLast ? 'Voir le résultat 🌟' : `Livre suivant →`;
+  document.getElementById('success-overlay').classList.add('open');
+}
+
+// ══ Init ══
+showScreen('screen-intro');
+</script>
+</body>
+</html>
