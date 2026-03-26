@@ -51,7 +51,7 @@ https://TON-USERNAME.github.io/bibli27sept/
 ## Mettre à jour les QR codes avec ta vraie URL
 
 Une fois ton site en ligne, il faut **régénérer les QR codes** avec ta vraie URL.  
-Reviens dans Claude et dis :
+Reviens dans vers moi et dis :
 
 > "Mon nom d'utilisateur GitHub est **[ton-username]**, régénère les QR codes."
 
